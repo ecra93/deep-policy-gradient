@@ -3,19 +3,10 @@ import numpy as np
 
 import gym
 
-#ENVIRONMENT = "CartPole-v0"
 ENVIRONMENT = "LunarLander-v2"
-NUM_TRAINING_EPISODES = 1500
-EPISODES_THEN_RENDER = NUM_TRAINING_EPISODES - 100
-DISCOUNT_FACTOR = 0.95
-
-
-def weight_variable(shape):
-    return tf.Variable(tf.truncated_normal(shape, stddev=0.01))
-
-def bias_variable(shape):
-    return tf.Variable(tf.constant(0.01, shape=shape))
-
+NUM_TRAINING_EPISODES = 1000
+EPISODES_THEN_RENDER = NUM_TRAINING_EPISODES - 10
+DISCOUNT_FACTOR = 0.99
 
 class Agent:
     
@@ -47,19 +38,23 @@ class Agent:
         with tf.name_scope("fully-connected-01"):
             W1 = tf.get_variable(name="W1", shape=[self.state_shape, 10],
                 initializer=tf.contrib.layers.xavier_initializer(seed=1))
-            #W1 = weight_variable([self.state_shape, 10])
-            b1 = bias_variable([10])
+            b1 = tf.get_variable(name="b1", shape=[10],
+                initializer=tf.contrib.layers.xavier_initializer(seed=1))
             fc1 = tf.nn.relu(tf.matmul(self.x, W1) + b1)
 
         with tf.name_scope("fully-connected-02"):
-            W2 = weight_variable([10, 10])
-            b2 = bias_variable([10])
+            W2 = tf.get_variable(name="W2", shape=[10, 10],
+                initializer=tf.contrib.layers.xavier_initializer(seed=1))
+            b2 = tf.get_variable(name="b2", shape=[10],
+                initializer=tf.contrib.layers.xavier_initializer(seed=1))
             fc2 = tf.nn.relu(tf.matmul(fc1, W2) + b2)
 
         # output layer
         with tf.name_scope("output"):
-            Wo = weight_variable([10, self.n_actions])
-            bo = bias_variable([self.n_actions])
+            Wo = tf.get_variable(name="Wo", shape=[10, self.n_actions],
+                initializer=tf.contrib.layers.xavier_initializer(seed=1))
+            bo = tf.get_variable(name="bo", shape=[self.n_actions],
+                initializer=tf.contrib.layers.xavier_initializer(seed=1))
             self.y_ = tf.nn.softmax(tf.matmul(fc2, Wo) + bo)
 
         # loss function
@@ -112,7 +107,8 @@ class Agent:
 
         print("===================================================")
         print("Completed episode:", episode_no)
-        print("Loss:", episode_loss)
+        print("Episode loss:", episode_loss)
+        print("Episode reward:", accum)
         print("===================================================\n")
 
     
