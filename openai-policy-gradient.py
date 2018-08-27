@@ -6,6 +6,7 @@ import gym
 
 ENVIRONMENT = "LunarLander-v2"
 NUM_TRAINING_EPISODES = 2
+DISCOUNT_FACTOR = 0.95
 
 
 def weight_variable(shape):
@@ -18,6 +19,8 @@ def bias_variable(shape):
 class Agent:
     
     def __init__(self, state_shape, n_actions):
+        self.input_dims = state_shape
+        self.n_output_actions = n_actions
         self.sess = tf.Session()
         self.initialize_policy_network(state_shape, n_actions)
         #self.saver = tf.train.Saver()
@@ -52,18 +55,58 @@ class Agent:
             self.y = tf.placeholder(tf.float32, shape=[None,
                 n_output_actions])
             self.r = tf.placeholder(tf.float32, shape=[None, ])
-            neg_log_prob = tf.nn.softmax_cross_entropy_with_logits(
+            neg_log_prob = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=self.y_, labels=self.y)
-            loss = tf.reduce_mean(neg_log_prob * self.r)
+            self.loss = tf.reduce_mean(neg_log_prob * self.r)
 
         # optimizer
         with tf.name_scope("optimizer"):
-            
+            self.optimizer = tf.train.AdamOptimizer().minimize(self.loss)
         
 
     def train(self, transitions):
-        pass
 
+        # collect array of s (None, input_dims)
+        # collect array of one_hot a (None, n_output_acgtions)
+        # collect array of discounted r (None,)
+
+        # transpose transitions to slice each set of elements
+        transitions = np.array(transitions)
+        transitions = np.transpose(transitions)
+
+        # grab the input states
+        s = transitions[0]
+        for e in s:
+            if e.shape != s[0].shape:
+                print(e)
+
+        # grab the input actions, convert to one-hot
+        a = transitions[1]
+        a_one_hot = np.zeros([a.size, self.n_output_actions])
+        a_one_hot[np.arange(a.size), a.astype(int)] = 1
+
+        # grab the rewards
+        r = transitions[2]
+
+        # we also need to convert the rewards discounted
+        discounted_r = np.zeros_like(r)
+        accum = 0
+        for i in reversed(range(r.size)):
+            accum = accum * DISCOUNT_FACTOR + r[i]
+            discounted_r[i] = accum
+
+        # run the training step
+        episode_loss, _ = self.sess.run([self.loss, self.optimizer],
+            feed_dict={
+                self.x: list(s),
+                self.y: a_one_hot,
+                self.r: discounted_r
+            })
+
+        #
+
+    
+        
 
 if __name__ == "__main__":
 
