@@ -1,15 +1,20 @@
 import tensorflow as tf
 import numpy as np
 
+import time
+
 import gym
 
 
 ENVIRONMENT = "LunarLander-v2"
 SEED = 1 # to get same initialization for game state and network weights
 
-N_TRAINING_EPISODES = 10000
-N_EPISODES_TO_RENDER = 10
+N_TRAINING_EPISODES = 1200
+N_EPISODES_TO_RENDER = 20
 N_EPISODES_TILL_RENDER = N_TRAINING_EPISODES - N_EPISODES_TO_RENDER
+
+EPISODE_LENGTH_TILL_RENDER = 30
+MAX_EPISODE_LENGTH = 120 # in seconds
 
 DISCOUNT_RATE = 0.99
 LEARNING_RATE = 0.02
@@ -23,8 +28,8 @@ class Agent:
         self.state_shape = state_shape
         self.n_actions = n_actions
 
-        self.sess = tf.Session()
         self.initialize_policy_network()
+        self.sess = tf.Session()
         #self.saver = tf.train.Saver()
         self.sess.run(tf.global_variables_initializer())
         #self.load_network()
@@ -39,7 +44,7 @@ class Agent:
         # input placeholders
         with tf.name_scope("input"):
             self.x = tf.placeholder(tf.float32,
-                shape=[None]+[self.state_shape])
+                shape=[None, self.state_shape])
 
         # hidden layers layers
         initializer = tf.contrib.layers.xavier_initializer(seed=SEED)
@@ -63,15 +68,16 @@ class Agent:
                     initializer=initializer)
             bo = tf.get_variable(name="bo", shape=[self.n_actions],
                     initializer=initializer)
-            self.y_ = tf.nn.softmax(tf.matmul(fc2, Wo) + bo)
+            y_pre_softmax = tf.matmul(fc2, Wo) + bo
+            self.y_ = tf.nn.softmax(y_pre_softmax)
 
         # loss function
         with tf.name_scope("loss"):
             self.y = tf.placeholder(tf.float32, shape=[None,
                     self.n_actions])
             self.r = tf.placeholder(tf.float32, shape=[None, ])
-            neg_log_prob = tf.log(tf.nn.softmax_cross_entropy_with_logits(
-                    logits=self.y_, labels=self.y))
+            neg_log_prob = tf.nn.softmax_cross_entropy_with_logits(
+                    logits=y_pre_softmax, labels=self.y)
             self.loss = tf.reduce_mean(neg_log_prob * self.r)
 
         # optimizer
@@ -98,7 +104,7 @@ class Agent:
 
         # we also need to convert the rewards discounted
         discounted_r = np.zeros_like(r)
-        accum = 0
+        accum = 0.0
         for i in reversed(range(r.size)):
             accum = accum * DISCOUNT_RATE + r[i]
             discounted_r[i] = accum
@@ -117,7 +123,7 @@ class Agent:
         print("Completed Episode:", episode_no)
         print("Episode Loss:", episode_loss)
         print("Episode Reward:", np.sum(r))
-        print("===================================================\n")
+        print("===================================================")
 
         # put code to save network here
         # ...
@@ -133,7 +139,7 @@ if __name__ == "__main__":
     agent = Agent(state_shape, n_actions)
     
     # run training loop
-    max_reward = 0.0
+    max_reward = -250.0
     for episode in range(N_TRAINING_EPISODES+N_EPISODES_TO_RENDER):
 
         # restart the game
@@ -141,6 +147,9 @@ if __name__ == "__main__":
         transitions = []
         done = False
 
+        # set start time
+        start_t = time.clock()
+        
         while not done:
 
             # render the environment if finished training
@@ -152,18 +161,27 @@ if __name__ == "__main__":
 
             # action is executed, causing state transition
             s_, r, done, _ = env.step(a)
+
+            # sometimes LL will hang - i.e. the craft just hovers forever;
+            # in this case, we will need to force a reset
+            current_t = time.clock()
+            if current_t - start_t > EPISODE_LENGTH_TILL_RENDER:
+                env.render()
+            
+            if current_t - start_t > MAX_EPISODE_LENGTH:
+                done = True
+
+            # save transition
             transitions.append([s, a, r, s_, done])
 
-            # set new transition to current
-            s = s_
-
             # compute episode reward so far
-            """
             episode_reward = np.sum(np.transpose(transitions)[2])
             if episode_reward < -250:
                 done = True
-            """
 
+            # set new transition to current
+            s = s_
+           
         # train the agent at the end of the episode
         agent.train(transitions, episode)
 
@@ -171,4 +189,7 @@ if __name__ == "__main__":
         episode_reward = np.sum(np.transpose(transitions)[2])
         if episode_reward > max_reward:
             max_reward = episode_reward
-            print("###NEW MAX REWARD###", max_reward )
+        print("Max Reward:", max_reward)
+        print("===================================================")
+
+
