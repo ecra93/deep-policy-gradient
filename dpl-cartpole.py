@@ -7,8 +7,8 @@ import gym
 ENVIRONMENT = "CartPole-v0"
 SEED = 1 # to get same initialization for game state and network weights
 
-N_TRAINING_EPISODES = 500
-N_EPISODES_TO_RENDER = 20
+N_TRAINING_EPISODES = 1000
+N_EPISODES_TO_RENDER = 10
 N_EPISODES_TILL_RENDER = N_TRAINING_EPISODES - N_EPISODES_TO_RENDER
 
 DISCOUNT_RATE = 0.95
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     agent = Agent(state_shape, n_actions)
     
     # run training loop
-    for episode in range(N_TRAINING_EPISODES):
+    for episode in range(N_TRAINING_EPISODES+N_EPISODES_TO_RENDER):
 
         # restart the game
         s = env.reset()
@@ -143,8 +143,11 @@ if __name__ == "__main__":
 
         while not done:
 
-            # render the environment
-            if episode > N_EPISODES_TILL_RENDER: env.render()
+            # render the environment at the beginning
+            if episode < 3: env.render()
+
+            # render the environment if finished training
+            if episode > N_TRAINING_EPISODES: env.render()
 
             # a = env.action_space.sample()
             # agent chooses action
