@@ -7,7 +7,7 @@ import gym
 ENVIRONMENT = "LunarLander-v2"
 SEED = 1 # to get same initialization for game state and network weights
 
-N_TRAINING_EPISODES = 1
+N_TRAINING_EPISODES = 10000
 N_EPISODES_TO_RENDER = 10
 N_EPISODES_TILL_RENDER = N_TRAINING_EPISODES - N_EPISODES_TO_RENDER
 
@@ -70,8 +70,8 @@ class Agent:
             self.y = tf.placeholder(tf.float32, shape=[None,
                     self.n_actions])
             self.r = tf.placeholder(tf.float32, shape=[None, ])
-            neg_log_prob = tf.nn.softmax_cross_entropy_with_logits_v2(
-                    logits=self.y_, labels=self.y)
+            neg_log_prob = tf.log(tf.nn.softmax_cross_entropy_with_logits(
+                    logits=self.y_, labels=self.y))
             self.loss = tf.reduce_mean(neg_log_prob * self.r)
 
         # optimizer
