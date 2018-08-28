@@ -18,11 +18,15 @@ LEARNING_RATE = 0.02
 class Agent:
 
     def __init__(self, state_shape, n_actions, discount_rate=0.99,
-        learning_rate=0.01):
+        learning_rate=0.01, save_path=None, load_path=None):
 
         # used to determine the shape of the network layers
         self.state_shape = state_shape
         self.n_actions = n_actions
+
+        # save and load paths
+        self.save_path = save_path
+        self.load_path = load_path
 
         # episode stuff
         self.episode_states = []
@@ -33,11 +37,18 @@ class Agent:
         self.discount_rate = 0.99
         self.learning_rate = 0.02
 
+        # init the network, launch tensorflow session
         self.initialize_policy_network()
         self.sess = tf.Session()
-        #self.saver = tf.train.Saver()
         self.sess.run(tf.global_variables_initializer())
-        #self.load_network()
+
+        #  load previously saved networks if any
+        self.saver = tf.train.Saver()
+        if load_path:
+            checkpoint = tf.train.latest_checkpoint(load_path)
+            if checkpoint:
+                print("Loading existing network at:", self.load_path)
+                self.saver.restore(self.sess, checkpoint)
 
     def initialize_policy_network(self):
         
@@ -131,4 +142,6 @@ class Agent:
         self.episode_rewards = []
 
         # put code to save network here
-        # ...
+        if self.save_path:
+            self.saver.save(self.sess, self.save_path)
+        
