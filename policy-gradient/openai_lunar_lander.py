@@ -7,14 +7,13 @@ from policy_gradient_agent import Agent
 
 ENVIRONMENT = "LunarLander-v2"
 RENDER_ENVIRONMENT = False
-REWARD_TO_TRIGGER_RENDER = 165
 SEED = 1
 
-N_TRAINING_EPISODES = 500
+N_TRAINING_EPISODES = 0
 N_OBSERVATION_EPISODES = 20
 MAX_EPISODE_DURATION = 120
 
-SAVE_PATH = "./lunar_lander/"
+SAVE_PATH = "./saved-networks/lunar/"
 
 
 # initialize environment

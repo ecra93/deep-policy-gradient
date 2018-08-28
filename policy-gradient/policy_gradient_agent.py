@@ -4,16 +4,6 @@ import numpy as np
 
 ENVIRONMENT = "LunarLander-v2"
 
-N_TRAINING_EPISODES = 500
-N_EPISODES_TO_RENDER = 20
-N_EPISODES_TILL_RENDER = N_TRAINING_EPISODES - N_EPISODES_TO_RENDER
-
-EPISODE_LENGTH_TILL_RENDER = 30
-MAX_EPISODE_LENGTH = 120 # in seconds
-
-DISCOUNT_RATE = 0.99
-LEARNING_RATE = 0.02
-
 
 class Agent:
 
@@ -34,8 +24,8 @@ class Agent:
         self.episode_rewards = []
 
         # training parameters
-        self.discount_rate = 0.99
-        self.learning_rate = 0.02
+        self.discount_rate = discount_rate
+        self.learning_rate = learning_rate
 
         # init the network, launch tensorflow session
         self.initialize_policy_network()
@@ -44,8 +34,9 @@ class Agent:
 
         #  load previously saved networks if any
         self.saver = tf.train.Saver()
-        if load_path:
-            checkpoint = tf.train.latest_checkpoint(load_path)
+        if self.load_path:
+            checkpoint = tf.train.latest_checkpoint(
+                checkpoint_dir=self.load_path)
             if checkpoint:
                 print("Loading existing network at:", self.load_path)
                 self.saver.restore(self.sess, checkpoint)
@@ -94,7 +85,7 @@ class Agent:
         # optimizer
         with tf.name_scope("optimizer"):
             self.optimizer = tf.train.AdamOptimizer(
-                LEARNING_RATE).minimize(self.loss)
+                self.learning_rate).minimize(self.loss)
         
     def act(self, s):
         policy = self.sess.run(self.y_, feed_dict={self.x:[s]})[0]
@@ -130,11 +121,12 @@ class Agent:
                 self.r: r_discounted
             })
 
+        """
         print("===================================================")
         print("Completed Episode:", episode_no)
         print("Episode Loss:", episode_loss)
         print("Episode Reward:", np.sum(self.episode_rewards))
-        print("===================================================")
+        """
 
         # reset the episode state, action, reward accumulators
         self.episode_states = []
@@ -143,5 +135,6 @@ class Agent:
 
         # put code to save network here
         if self.save_path:
-            self.saver.save(self.sess, self.save_path)
-        
+            print("saving..")
+            self.saver.save(self.sess, self.save_path + "saved-network")
+        print("===================================================")
