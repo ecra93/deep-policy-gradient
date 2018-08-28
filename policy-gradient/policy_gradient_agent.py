@@ -121,12 +121,10 @@ class Agent:
                 self.r: r_discounted
             })
 
-        """
         print("===================================================")
         print("Completed Episode:", episode_no)
         print("Episode Loss:", episode_loss)
         print("Episode Reward:", np.sum(self.episode_rewards))
-        """
 
         # reset the episode state, action, reward accumulators
         self.episode_states = []
@@ -135,6 +133,6 @@ class Agent:
 
         # put code to save network here
         if self.save_path:
-            print("saving..")
+            print("Saving to: " + self.save_path)
             self.saver.save(self.sess, self.save_path + "saved-network")
         print("===================================================")

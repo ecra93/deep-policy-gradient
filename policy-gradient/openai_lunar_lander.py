@@ -10,10 +10,10 @@ RENDER_ENVIRONMENT = False
 SEED = 1
 
 N_TRAINING_EPISODES = 0
-N_OBSERVATION_EPISODES = 20
+N_OBSERVATION_EPISODES = 100
 MAX_EPISODE_DURATION = 120
 
-SAVE_PATH = "./saved-networks/lunar/"
+SAVE_PATH = "./saved-networks/" + ENVIRONMENT + "/"
 
 
 # initialize environment
@@ -23,7 +23,7 @@ n_actions = env.action_space.n
 state_shape = env.observation_space.shape[0]
 
 # initialize agent
-agent = Agent(state_shape, n_actions, discount_rate=0.99, 
+agent = Agent(state_shape, n_actions, discount_rate=0.95, 
     learning_rate=0.02, save_path=SAVE_PATH, load_path=SAVE_PATH)
 
 # run the training loop
