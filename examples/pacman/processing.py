@@ -1,6 +1,11 @@
+import numpy as np
 import cv2
 
-def process(state):
+
+def process_raw_state(state):
+    """
+    Processes a single MsPacman state screenshot.
+    """
 
     # crop out bottom of the pacman bar
     state = state[1:171, :]
@@ -13,3 +18,22 @@ def process(state):
     state = cv2.resize(state, (84,84))
 
     return state
+
+
+def process_discounted_rewards(r, discount_factor):
+    """
+    Backwards sums and discounts episode rewards - assumes that the last
+    reward in the array pertains to the final timestep.
+    """
+    # accumulate and discount r
+    r_discounted = np.zeros_like(r)
+    accum = 0.0
+    for i in reversed(range(len(r))):
+        accum = accum * discount_factor + r[i]
+        r_discounted[i] = accum
+
+    # standardise discounted r
+    r_discounted -= np.mean(r_discounted)
+    r_discounted /= np.std(r_discounted)
+
+    return r_discounted
