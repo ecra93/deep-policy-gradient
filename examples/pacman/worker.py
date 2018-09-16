@@ -34,15 +34,14 @@ class Worker(Thread):
             # update initial state
             s0 = s1
 
-    def run(self):
+    def run(self, num_episodes):
         # start a new thread for each episode
-        self.play_episode()
-        pass
+        for _ in range(num_episodes):
+            self.play_episode()
+        
+        # shutdown worker
+        self.env.close()
 
     def send_to_master(self):
         # send transitions to master
         self.network.store_stransitions(transitions)
-
-    def shutdown_worker():
-        # shutdown the worker
-        env.close()
