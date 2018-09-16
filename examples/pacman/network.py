@@ -20,7 +20,7 @@ class Network:
         # train network here
         pass
 
-    def choose_action(state):
+    def choose_action(self, state):
         # stub: currently just chooses a random action
         return np.random.randint(self.n_actions)
 
