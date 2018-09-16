@@ -8,7 +8,7 @@ class Network:
 
     def __init__(self, n_actions):
         self.n_actions = n_actions
-        self.initialize_policy_network()
+        self.initialize_network()
         self.transitions = []
         self.lock = threading.Lock()
 
