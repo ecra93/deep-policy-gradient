@@ -25,5 +25,7 @@ class Network:
         return np.random.randint(self.n_actions)
 
     def store_transitions(transitions):
+        self.lock.acquire()
         self.transitions.append(transitions)
+        self.lock.release()
         
