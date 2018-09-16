@@ -1,6 +1,13 @@
 import tensorflow as tf
 import numpy as np
+
 import threading
+from threading import Thread
+
+import time
+
+WEIGHT_VALUE_LOSS = 0.5
+WEIGHT_ENTROPY_LOSS = 0.01
 
 class Network:
     """
@@ -51,10 +58,56 @@ class Network:
             y_ = tf.matmul(fc1, w4) + b4
             self.policy = tf.nn.softmax(y_)
 
+        with tf.name_scope("value"):
+            Wv = tf.get_variable(name="Wv", shape=[100,1])
+            bv = tf.get_variable(name="bv", shape=[1])
+            value = tf.matmul(fc1, Wv) + bv
+
+        with tf.name_scope("policy-loss"):
+            self.a = tf.placeholder(tf.int32, shape=[None,])
+            a_one_hot = tf.one_hot(self.a, depth=self.n_actions)
+            self.r = tf.placeholder(tf.float32, shape=[None,])
+            log_ap = tf.log(tf.reduce_sum(self.policy * a_one_hot,
+                axis=1, keepdims=True) + 1e-10)
+            advantage = self.r - value
+            loss_p = log_ap * tf.stop_gradient(advantage)
+
+        with tf.name_scope("value-loss"):
+            loss_v = WEIGHT_VALUE_LOSS * tf.square(advantage)
+
+        with tf.name_scope("entropy-loss"):
+            loss_e = WEIGHT_ENTROPY_LOSS * tf.reduce_sum(self.policy *\
+                tf.log(self.policy + 1e-10), axis=1, keepdims=True)
+
+        with tf.name_scope("total-loss"):
+            self.loss_t = tf.reduce_mean(loss_p + loss_v + loss_e)
+
+        with tf.name_scope("optimizer"):
+            self.optimizer = tf.train.RMSPropOptimizer(0.01).minimize(
+                    self.loss_t)
+
 
     def train_network(self):
+        # if no training data, then skip
+        if not self.episodes:
+            return
+
+        # grab the most recent episode
+        self.lock.acquire()
+        episode = self.episodes.pop()
+        self.lock.release()
+
+        s0 = episode[0]
+        a = episode[1]
+        s1 = episode[2]
+        r = episode[3]
+
         # train network here
-        pass
+        loss, _ = self.sess.run([self.loss_t, self.optimizer], feed_dict={
+            self.X: s0,
+            self.a: a,
+            self.r: r
+        })
 
 
     def choose_action(self, state):
@@ -67,3 +120,15 @@ class Network:
         self.lock.acquire()
         self.episodes.append((s0, a, s1, r_discounted))
         self.lock.release()
+
+
+class Optimizer(Thread):
+
+    def __init__(self, network):
+        super(Optimizer, self).__init__()
+        self.network = network
+
+    def run(self):
+        while True:
+            time.sleep(5)
+            self.network.train_network()

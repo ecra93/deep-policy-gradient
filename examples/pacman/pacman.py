@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from network import Network
+from network import Network, Optimizer
 from worker import Worker
 
 
@@ -26,6 +26,10 @@ if __name__ == "__main__":
         for i in range(1, n_workers):
             workers[i].start()
 
+        # start an optimizer
+        optimizer = Optimizer(network)
+        optimizer.start()
+
         # run worker[0] on main thread
         workers[0].is_main = True
         workers[0].run()
@@ -33,3 +37,6 @@ if __name__ == "__main__":
         # wait for the remaining workers to finish
         for i in range(1, n_workers):
             workers[i].join()
+
+        # wait for the optimizer to wrap up
+        optimizer.join()
