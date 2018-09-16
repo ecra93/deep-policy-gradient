@@ -26,8 +26,10 @@ class Worker(Thread):
         # run the game for an episode
         done = False
         while not done:
+
             # choose an action
-            a = self.network.choose_action(s0)
+            a = self.network.choose_action(
+                    processing.process_state_stacks([s0]))
 
             # execute action
             x1, r, done, info = self.env.step(a)
@@ -41,7 +43,7 @@ class Worker(Thread):
             episode_r.append(r)
 
             # display action on screen
-            # self.env.render()
+            self.env.render()
 
             # update initial state
             s0 = s1

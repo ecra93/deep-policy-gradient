@@ -20,6 +20,10 @@ def process_raw_state(state):
     return state
 
 
+def process_state_stack(s):
+    return np.transpose(s, axes=[0,2,3,1])
+
+
 def process_state_stacks(s):
     """
     Swaps an array of states, each of shape (4, 84, 84, 1), into an array
