@@ -9,6 +9,8 @@ class Network:
     def __init__(self, n_actions):
         self.n_actions = n_actions
         self.initialize_policy_network()
+        self.transitions = []
+        self.lock = threading.Lock()
 
     def initialize_network(self):
         # define the network architecture here
@@ -21,3 +23,7 @@ class Network:
     def choose_action(state):
         # stub: currently just chooses a random action
         return np.random.randint(self.n_actions)
+
+    def store_transitions(transitions):
+        self.transitions.append(transitions)
+        
