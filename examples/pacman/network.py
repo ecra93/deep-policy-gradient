@@ -1,13 +1,13 @@
 import tensorflow as tf
 import numpy as np
+import time
 
 import threading
 from threading import Thread
 
-import time
-
 WEIGHT_VALUE_LOSS = 0.5
 WEIGHT_ENTROPY_LOSS = 0.01
+
 
 class Network:
     """
@@ -20,6 +20,8 @@ class Network:
 
         self.sess = sess
         self.initialize_network()
+        self.saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.5)
+        self.load_network()
         self.sess.run(tf.global_variables_initializer())
 
 
@@ -70,7 +72,7 @@ class Network:
             log_ap = tf.log(tf.reduce_sum(self.policy * a_one_hot,
                 axis=1, keepdims=True) + 1e-10)
             advantage = self.r - value
-            loss_p = log_ap * tf.stop_gradient(advantage)
+            loss_p = -log_ap * tf.stop_gradient(advantage)
 
         with tf.name_scope("value-loss"):
             loss_v = WEIGHT_VALUE_LOSS * tf.square(advantage)
@@ -83,8 +85,8 @@ class Network:
             self.loss_t = tf.reduce_mean(loss_p + loss_v + loss_e)
 
         with tf.name_scope("optimizer"):
-            self.optimizer = tf.train.RMSPropOptimizer(0.01).minimize(
-                    self.loss_t)
+            self.optimizer = tf.train.RMSPropOptimizer(
+                    learning_rate=0.01,decay=0.99).minimize(self.loss_t)
 
 
     def train_network(self):
@@ -109,6 +111,16 @@ class Network:
             self.r: r
         })
 
+        # logging messages
+        print("========================================================")
+        print("Training Episode Complete")
+        print("Episode Reward: " + str(r[0]))
+        print("Episode Loss: " + str(loss))
+        print("========================================================")
+
+        # save network
+        self.save_network()
+
 
     def choose_action(self, state):
         policy = self.sess.run(self.policy, feed_dict={self.X:state})[0]
@@ -121,14 +133,23 @@ class Network:
         self.episodes.append((s0, a, s1, r_discounted))
         self.lock.release()
 
+    def load_network(self):
+        ckpt = tf.train.latest_checkpoint(checkpoint_dir="./saved-networks")
+        if not (ckpt is None):
+            self.saver.restore(self.sess, ckpt)
+
+    def save_network(self):
+        self.saver.save(self.sess, "saved-networks/pacman")
+
 
 class Optimizer(Thread):
 
     def __init__(self, network):
         super(Optimizer, self).__init__()
         self.network = network
+        self.stop = False
 
     def run(self):
-        while True:
-            time.sleep(5)
+        while (not self.stop):
+            time.sleep(0)
             self.network.train_network()
