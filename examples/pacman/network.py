@@ -1,5 +1,5 @@
 import threading
-import numpy
+import numpy as np
 
 class Network:
     """
