@@ -20,7 +20,21 @@ def process_raw_state(state):
     return state
 
 
-def process_discounted_rewards(r, discount_factor):
+def process_state_stacks(s):
+    """
+    Swaps an array of states, each of shape (4, 84, 84, 1), into an array
+    of states, each of shape (84, 84, 4)
+    """
+    # pass s into np array
+    s = np.array(s)
+
+    # swap from (?,4,84,84,1) to (?,1,84,84,4)
+    s = np.transpose(s, axes=[0,2,3,1])
+
+    return s
+
+
+def process_discounted_rewards(r, discount_factor=0.95):
     """
     Backwards sums and discounts episode rewards - assumes that the last
     reward in the array pertains to the final timestep.

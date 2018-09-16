@@ -14,8 +14,8 @@ class Worker(Thread):
 
         # reset environment for each iteration
         x0 = self.env.reset()
-        x0 = process.process_raw_state(x0)
-        s0 = (x0, x0, x0, x0)
+        x0 = processing.process_raw_state(x0)
+        s0 = [x0, x0, x0, x0]
 
         # store episode transitions
         episode_s0 = []
@@ -30,9 +30,9 @@ class Worker(Thread):
             a = self.network.choose_action(s0)
 
             # execute action
-            x1, r1, done, info = self.env.step(a)
-            x1 = process.process_raw_state(x1)
-            s1 = (x1, s0[0], s[1], s[2])
+            x1, r, done, info = self.env.step(a)
+            x1 = processing.process_raw_state(x1)
+            s1 = [x1, s0[0], s0[1], s0[2]]
 
             # store transition
             episode_s0.append(s0)
@@ -41,7 +41,7 @@ class Worker(Thread):
             episode_r.append(r)
 
             # display action on screen
-            self.env.render()
+            # self.env.render()
 
             # update initial state
             s0 = s1
@@ -58,6 +58,8 @@ class Worker(Thread):
         # gracefully shutdown environment
         self.env.close()
 
-    def send_tranitions_to_network(self, s0, a, s1, r):
-        r_discounted = process.process_discounted_rewards(r)
-        self.network.store_stransitions(s0, a, s1, r_discounted)
+    def send_transitions_to_network(self, s0, a, s1, r):
+        s0 = processing.process_state_stacks(s0)
+        s1 = processing.process_state_stacks(s1)
+        r_discounted = processing.process_discounted_rewards(r)
+        self.network.store_transitions(s0, a, s1, r_discounted)
