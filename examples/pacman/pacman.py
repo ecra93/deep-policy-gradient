@@ -54,7 +54,7 @@ if __name__ == "__main__":
         while network.episodes:
             time.sleep(10)
         for i in range(n_optimizers):
-            optimizer.stop = True
+            optimizers[i].stop = True
 
         # wait for the optimizer to wrap up
         for i in range(n_optimizers):
