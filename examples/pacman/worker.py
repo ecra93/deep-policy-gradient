@@ -5,10 +5,13 @@ import gym
 import processing
 
 class Worker(Thread):
-    def __init__(self, game, network):
+
+    def __init__(self, game, network, n_episodes):
         Thread.__init__(self)
         self.env = gym.make(game)
         self.network = network
+        self.n_episodes = n_episodes
+        self.is_main = False
 
     def play_episode(self):
 
@@ -43,7 +46,8 @@ class Worker(Thread):
             episode_r.append(r)
 
             # display action on screen
-            self.env.render()
+            if self.is_main:
+                self.env.render()
 
             # update initial state
             s0 = s1
@@ -52,9 +56,9 @@ class Worker(Thread):
         self.send_transitions_to_network(episode_s0, episode_a,
                 episode_s1, episode_r)
 
-    def run(self, n_episodes):
+    def run(self):
         # play episode n times
-        for _ in range(n_episodes):
+        for _ in range(self.n_episodes):
             self.play_episode()
         
         # gracefully shutdown environment
