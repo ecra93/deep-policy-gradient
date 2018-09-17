@@ -31,20 +31,20 @@ class Network:
             self.X = tf.placeholder(tf.float32, shape=[None,4])
 
         with tf.name_scope("fc-layer-1"):
-            w3 = tf.get_variable(name="w3", shape=[4, 100])
-            b3 = tf.get_variable(name="b3", shape=[100])
+            w3 = tf.get_variable(name="w3", shape=[4, 24])
+            b3 = tf.get_variable(name="b3", shape=[24])
             fc1 = tf.nn.relu(tf.matmul(self.X, w3) + b3)
 
         with tf.name_scope("policy-output"):
-            w4 = tf.get_variable(name="w4", shape=[100, self.n_actions])
+            w4 = tf.get_variable(name="w4", shape=[24, self.n_actions])
             b4 = tf.get_variable(name="b4", shape=[self.n_actions])
             y_ = tf.matmul(fc1, w4) + b4
             self.policy = tf.nn.softmax(y_)
 
         with tf.name_scope("value"):
-            Wv = tf.get_variable(name="Wv", shape=[100,1])
+            Wv = tf.get_variable(name="Wv", shape=[24,1])
             bv = tf.get_variable(name="bv", shape=[1])
-            value = tf.matmul(fc1, Wv) + bv
+            self.value = tf.squeeze(tf.matmul(fc1, Wv) + bv)
 
         with tf.name_scope("policy-loss"):
             self.a = tf.placeholder(tf.int32, shape=[None,])
@@ -52,7 +52,7 @@ class Network:
             self.r = tf.placeholder(tf.float32, shape=[None,])
             log_ap = tf.log(tf.reduce_sum(self.policy * a_one_hot,
                 axis=1, keepdims=True) + 1e-10)
-            advantage = self.r - value
+            advantage = self.r - self.value
             loss_p = -log_ap * tf.stop_gradient(advantage)
 
         with tf.name_scope("value-loss"):
@@ -85,6 +85,11 @@ class Network:
         s1 = episode[2]
         r = episode[3]
 
+        # predict value for s1
+        v = self.sess.run(self.value, feed_dict={self.X:s1})
+        v[-1] = 0.0
+        r = r + v
+
         # train network here
         loss, _ = self.sess.run([self.loss_t, self.optimizer], feed_dict={
             self.X: s0,
@@ -95,7 +100,8 @@ class Network:
         # logging messages
         print("========================================================")
         print("Training Episode Complete")
-        print("Episode Reward: " + str(r[0]))
+        print("Episode Reward: " + str(sum(episode[3])))
+        print("Episode Reward: " + str(sum(r)))
         print("Episode Loss: " + str(loss))
         print("========================================================")
 

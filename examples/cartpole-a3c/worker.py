@@ -60,5 +60,6 @@ class Worker(Thread):
         self.env.close()
 
     def send_transitions_to_network(self, s0, a, s1, r):
-        r_discounted = processing.process_discounted_rewards(r)
-        self.network.store_transitions(s0, a, s1, r_discounted)
+        r_n_step = processing.process_n_step_rewards(r)
+        s_n_step = processing.process_n_step_states(s0)
+        self.network.store_transitions(s0, a, s_n_step, r_n_step)

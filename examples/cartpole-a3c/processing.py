@@ -2,44 +2,54 @@ import numpy as np
 import cv2
 
 
-def process_raw_state(state):
+def process_n_step_rewards(r, discount_factor=0.95, n_steps=8):
     """
-    Processes a single MsPacman state screenshot.
+    A3C
+    Converts the sequence of raw rewards (r) into discounted n-step
+    rewards.
+
+        V(si) = ri + GAMMA*ri+1 * GAMMA^2*ri_2 ... + GAMMA^nV(si+n)
+
     """
+    # to store n_step reward
+    r_n_step = np.zeros_like(r)
 
-    # crop out bottom of the pacman bar
-    state = state[1:171, :]
+    # compute n_step rewards
+    for i in range(len(r)):
+        accum = r[i]
+        for j in reversed(range(1,n_steps+1)):
+            t = i + j
+            if t >= len(r):
+                continue
+            else:
+                accum = accum * discount_factor + r[t]
+        r_n_step[i] = accum
 
-    # convert to grayscale, then to binary
-    state = cv2.cvtColor(state, cv2.COLOR_BGR2GRAY)
-    state = cv2.threshold(state, 100, 255, cv2.THRESH_BINARY)[1]
-
-    # resize to 84,84
-    state = cv2.resize(state, (84,84))
-
-    return state
-
-
-def process_state_stack(s):
-    return np.transpose(s, axes=[0,2,3,1])
+    return r_n_step
 
 
-def process_state_stacks(s):
-    """
-    Swaps an array of states, each of shape (4, 84, 84, 1), into an array
-    of states, each of shape (84, 84, 4)
-    """
-    # pass s into np array
-    s = np.array(s)
+def process_n_step_states(s, n_steps=8):
 
-    # swap from (?,4,84,84,1) to (?,1,84,84,4)
-    s = np.transpose(s, axes=[0,2,3,1])
+    # to store the n_step states
+    s_n_step = np.zeros_like(s)
 
-    return s
+    # compute the nth state forward
+    for i in range(len(s)):
+        t = i + n_steps
+
+        # if there aren't n states left, then use preceeding state
+        while t >= len(s):
+            t = t - 1
+
+        s_n_step[i] = s[t]
+
+    return s_n_step
+
 
 
 def process_discounted_rewards(r, discount_factor=0.95):
     """
+    Policy Gradient
     Backwards sums and discounts episode rewards - assumes that the last
     reward in the array pertains to the final timestep.
     """

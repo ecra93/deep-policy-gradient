@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     n_actions = 2
     n_episodes = 500
-    n_workers = 3
+    n_workers = 5
     n_optimizers = 2
     game = "CartPole-v1"
 
